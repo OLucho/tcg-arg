@@ -10,5 +10,9 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require("daisyui")],
+  daisyui: {
+    themes: ["abyss"]
+  }
+  ,
 } satisfies Config;
