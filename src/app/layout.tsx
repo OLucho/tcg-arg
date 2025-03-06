@@ -13,7 +13,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable}`} data-theme="abyss">
+    <html lang="en" className={`${GeistSans.variable}`} data-theme="pokemon">
       <body>{children}</body>
     </html>
   );

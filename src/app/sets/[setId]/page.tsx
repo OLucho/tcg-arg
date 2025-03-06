@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { type PokemonCard, type PokemonSet } from "~/types"
+import { ONE_YEAR_ON_SECONDS } from "~/common"
 
 async function getCards(setId: string) {
     const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}`, {
-        next: { revalidate: 86400 }
+        next: { revalidate: ONE_YEAR_ON_SECONDS }
     })
     const data = await res.json() as { data: PokemonCard[] }
     return data.data
@@ -12,7 +13,7 @@ async function getCards(setId: string) {
 
 async function getSet(setId: string) {
     const res = await fetch(`https://api.pokemontcg.io/v2/sets/${setId}`, {
-        next: { revalidate: 86400 }
+        next: { revalidate: ONE_YEAR_ON_SECONDS }
     })
     const data = await res.json() as { data: PokemonSet }
     return data.data
