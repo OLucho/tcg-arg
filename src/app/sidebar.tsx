@@ -6,12 +6,12 @@ import { useState } from "react"
 import { type PokemonSet } from "~/types"
 
 interface SidebarProps {
-    seriesGroups: Record<string, PokemonSet[]>
+    seriesGroups: Record<string, PokemonSet[]>;
+    onClose: () => void;
 }
 
 export function Sidebar({ seriesGroups }: SidebarProps) {
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
-
     const toggleGroup = (series: string) => {
         setExpandedGroups((prev) => ({
             ...prev,
@@ -25,10 +25,6 @@ export function Sidebar({ seriesGroups }: SidebarProps) {
                 <label htmlFor="drawer-toggle" className="btn btn-square btn-ghost">
                     ❌
                 </label>
-            </div>
-
-            <div className="p-2 mb-4 border-b border-base-300 flex items-center">
-                <h1 className="text-xl font-bold">TCG-Argentina</h1>
             </div>
 
             <ul className="menu p-2 w-full max-w-full">
