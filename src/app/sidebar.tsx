@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronDown, ChevronUp } from "lucide-react"
+import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
 import { type PokemonSet } from "~/types"
@@ -10,7 +11,7 @@ interface SidebarProps {
     onClose: () => void;
 }
 
-export function Sidebar({ seriesGroups }: SidebarProps) {
+export function Sidebar({ seriesGroups, onClose }: SidebarProps) {
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
     const toggleGroup = (series: string) => {
         setExpandedGroups((prev) => ({
@@ -53,12 +54,15 @@ export function Sidebar({ seriesGroups }: SidebarProps) {
                                         <Link
                                             href={`/sets/${set.id}`}
                                             className="flex items-start gap-2 px-2 py-1 hover:bg-base-300 rounded-lg w-full"
+                                            onClick={onClose}
                                         >
                                             {set.images.symbol && (
-                                                <img
+                                                <Image
                                                     src={set.images.symbol || "/placeholder.svg"}
                                                     alt={set.name}
                                                     className="w-5 h-5 flex-shrink-0 mt-1"
+                                                    width={5}
+                                                    height={5}
                                                 />
                                             )}
                                             <span className="break-words w-[calc(100%-28px)]">{set.name}</span>

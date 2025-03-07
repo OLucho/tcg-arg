@@ -13,6 +13,14 @@ const config = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.pokemontcg.io",
+      },
+    ],
+  },
 };
 
 export default config;
