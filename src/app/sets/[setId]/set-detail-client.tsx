@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Grid, List } from "lucide-react"
-import type { PokemonCard, PokemonSet } from "~/types"
-import Image from "next/image"
+import { useState, useMemo } from "react"
+import { Grid, List, Search, X } from "lucide-react"
+import type { PokemonSet, CardVariants, PokemonCard } from "~/types"
+import Tabs from "./components/tabs"
+import CardGrid from "./components/card-grid"
+import CardVariantsButtons from "./components/card-variants-button"
+
 
 interface SetDetailClientProps {
     setDetails: PokemonSet
@@ -12,6 +15,70 @@ interface SetDetailClientProps {
 
 export default function SetDetailClient({ setDetails, cards }: SetDetailClientProps) {
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+    const [searchTerm, setSearchTerm] = useState("")
+    const [activeTab, setActiveTab] = useState("show-all")
+    const [cardVariants, setCardVariants] = useState<Record<string, CardVariants>>({})
+
+    // Filtrar cartas según el término de búsqueda
+    const filteredBySearch = useMemo(() => {
+        if (!searchTerm.trim()) return cards
+
+        const lowercaseSearch = searchTerm.toLowerCase()
+        return cards.filter(
+            (card) => card.name.toLowerCase().includes(lowercaseSearch) || card.number.includes(lowercaseSearch),
+        )
+    }, [searchTerm, cards])
+
+    // Filtrar cartas según la tab activa
+    const displayedCards = useMemo(() => {
+        switch (activeTab) {
+            case "have":
+                return filteredBySearch.filter((card) => {
+                    const variants = cardVariants[card.id]
+                    return variants && (variants.normal || variants.holofoil || variants.reverseHolofoil)
+                })
+            case "need":
+                return filteredBySearch.filter((card) => {
+                    const variants = cardVariants[card.id]
+                    return !variants || (!variants.normal && !variants.holofoil && !variants.reverseHolofoil)
+                })
+            case "dupes":
+                // Implementar lógica para duplicados si es necesario
+                return []
+            default:
+                return filteredBySearch
+        }
+    }, [activeTab, filteredBySearch, cardVariants])
+
+    // Calcular contadores para las tabs
+    const counters = useMemo(() => {
+        const have = cards.filter((card) => {
+            const variants = cardVariants[card.id]
+            return variants && (variants.normal || variants.holofoil || variants.reverseHolofoil)
+        }).length
+
+        return {
+            have,
+            need: cards.length - have,
+            dupes: 0, // Implementar lógica para duplicados si es necesario
+        }
+    }, [cards, cardVariants])
+
+    // Limpiar la búsqueda
+    const clearSearch = () => {
+        setSearchTerm("")
+    }
+
+    // Función para alternar las variantes de una carta
+    const toggleVariant = (cardId: string, variant: keyof CardVariants) => {
+        setCardVariants((prev) => ({
+            ...prev,
+            [cardId]: {
+                ...(prev[cardId] ?? { normal: false, holofoil: false, reverseHolofoil: false }),
+                [variant]: !prev[cardId]?.[variant],
+            },
+        }))
+    }
 
     return (
         <div className="bg-base-300 min-h-screen pb-16">
@@ -26,9 +93,7 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                 <div className="hero-content text-center text-neutral-content">
                     <div className="max-w-md">
                         {setDetails.images.symbol && (
-                            <Image
-                                width={20}
-                                height={20}
+                            <img
                                 src={setDetails.images.symbol || "/placeholder.svg"}
                                 alt={`${setDetails.name} Symbol`}
                                 className="w-16 h-16 mx-auto mb-4"
@@ -52,116 +117,167 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                 {/* Sección de cartas */}
                 <div className="card bg-base-200 shadow-xl">
                     <div className="card-body">
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
                                 <h2 className="card-title text-2xl">Browse Cards</h2>
-                                <p className="text-gray-400">{cards.length} cards in this set</p>
+                                <p className="text-gray-400">
+                                    {displayedCards.length === cards.length
+                                        ? `${cards.length} cards in this set`
+                                        : `Showing ${displayedCards.length} of ${cards.length} cards`}
+                                </p>
                             </div>
 
-                            <div className="btn-group">
-                                <button
-                                    className={`btn btn-sm ${viewMode === "grid" ? "btn-active" : ""}`}
-                                    onClick={() => setViewMode("grid")}
-                                >
-                                    <Grid size={16} />
-                                </button>
-                                <button
-                                    className={`btn btn-sm ${viewMode === "list" ? "btn-active" : ""}`}
-                                    onClick={() => setViewMode("list")}
-                                >
-                                    <List size={16} />
-                                </button>
+                            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                                {/* Input de búsqueda */}
+                                <div className="relative w-full sm:w-64">
+                                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <Search size={18} className="text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        className="input input-bordered w-full pl-10 pr-10"
+                                        placeholder="Search by name or number..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    {searchTerm && (
+                                        <button className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={clearSearch}>
+                                            <X size={18} className="text-gray-400 hover:text-gray-600" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Botones de vista */}
+                                <div className="btn-group self-end">
+                                    <button
+                                        className={`btn btn-sm ${viewMode === "grid" ? "btn-active" : ""}`}
+                                        onClick={() => setViewMode("grid")}
+                                    >
+                                        <Grid size={16} />
+                                    </button>
+                                    <button
+                                        className={`btn btn-sm ${viewMode === "list" ? "btn-active" : ""}`}
+                                        onClick={() => setViewMode("list")}
+                                    >
+                                        <List size={16} />
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+
+                        {/* Leyenda de variantes */}
+                        <div className="flex flex-wrap gap-4 mt-4 text-sm">
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-yellow-400 rounded"></div>
+                                <span>=Normal</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                                <span>=Holofoil</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 bg-blue-400 rounded"></div>
+                                <span>=Reverse Holofoil</span>
+                            </div>
+                        </div>
+
+                        {/* Tabs de navegación */}
+                        <div className="mt-6">
+                            <Tabs
+                                activeTab={activeTab}
+                                haveCount={counters.have}
+                                needCount={counters.need}
+                                dupesCount={counters.dupes}
+                                onTabChange={setActiveTab}
+                            />
                         </div>
 
                         <div className="divider"></div>
 
-                        {/* Grid de cartas usando card-compact de daisyUI */}
-                        {viewMode === "grid" ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-                                {cards.map((card) => (
-                                    <div
-                                        key={card.id}
-                                        className="card card-compact bg-base-300 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
-                                    >
-                                        <figure>
-                                            <Image
-                                                width={200}
-                                                height={200}
-                                                src={card.images.small || "/placeholder.svg"} alt={card.name} loading="lazy" />
-                                        </figure>
-                                        <div className="card-body p-2">
-                                            <h3 className="card-title text-sm justify-center">{card.name}</h3>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs opacity-80">
-                                                    {card.number}/{setDetails.printedTotal}
-                                                </span>
-                                                <span className="badge badge-xs">{card.rarity}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="table table-zebra">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Card</th>
-                                            <th>Name</th>
-                                            <th>Type</th>
-                                            <th>Rarity</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {cards.map((card) => (
-                                            <tr key={card.id} className="hover">
-                                                <td>{card.number}</td>
-                                                <td>
-                                                    <Image
-                                                        width={20}
-                                                        height={20}
-                                                        src={card.images.small || "/placeholder.svg"}
-                                                        alt={card.name}
-                                                        className="w-12 h-auto"
-                                                        loading="lazy"
-                                                    />
-                                                </td>
-                                                <td>{card.name}</td>
-                                                <td>{card.types?.join(", ") || "-"}</td>
-                                                <td>
-                                                    <span className="badge">{card.rarity}</span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-
-                        {/* Mensaje si no hay cartas */}
-                        {cards.length === 0 && (
-                            <div className="alert alert-warning">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="stroke-current shrink-0 h-6 w-6"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
+                        {/* Mensaje cuando no hay resultados de búsqueda */}
+                        {displayedCards.length === 0 && (
+                            <div className="alert alert-info">
                                 <div>
-                                    <h3 className="font-bold">No cards found!</h3>
-                                    <div className="text-xs">This set doesn't have any cards available.</div>
+                                    {searchTerm ? (
+                                        <>
+                                            <span>No cards found matching &quot;{searchTerm}&quot;. Try a different search term.</span>
+                                            <button className="btn btn-sm ml-4" onClick={clearSearch}>
+                                                Clear Search
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <span>No cards found in this category.</span>
+                                    )}
                                 </div>
                             </div>
                         )}
+
+                        {/* Grid de cartas */}
+                        {displayedCards.length > 0 &&
+                            (viewMode === "grid" ? (
+                                <CardGrid
+                                    cards={displayedCards}
+                                    setDetails={setDetails}
+                                    cardVariants={cardVariants}
+                                    onToggleVariant={toggleVariant}
+                                />
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="table table-zebra">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Card</th>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Rarity</th>
+                                                <th>Variants</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {displayedCards.map((card) => (
+                                                <tr key={card.id} className="hover">
+                                                    <td>{card.number}</td>
+                                                    <td>
+                                                        <div className="relative w-16 h-24">
+                                                            <img
+                                                                src={card.images.small || "/placeholder.svg"}
+                                                                alt={card.name}
+                                                                className="w-full h-full object-contain rounded"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                    <td>{card.name}</td>
+                                                    <td>{card.types?.join(", ") ?? "-"}</td>
+                                                    <td>
+                                                        <span className="badge">{card.rarity}</span>
+                                                    </td>
+                                                    <td>
+                                                        <div className="flex gap-2">
+                                                            {/* Usar el componente CardVariantsButtons con tamaño grande */}
+                                                            <CardVariantsButtons
+                                                                cardId={card.id}
+                                                                availableVariants={
+                                                                    card.tcgplayer?.prices
+                                                                        ? (Object.keys(card.tcgplayer.prices).filter((key) =>
+                                                                            ["normal", "holofoil", "reverseHolofoil"].includes(key),
+                                                                        ) as ("normal" | "holofoil" | "reverseHolofoil")[])
+                                                                        : ["normal"]
+                                                                }
+                                                                selectedVariants={
+                                                                    cardVariants[card.id] ?? { normal: false, holofoil: false, reverseHolofoil: false }
+                                                                }
+                                                                onToggleVariant={toggleVariant}
+                                                                size="lg"
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ))}
                     </div>
                 </div>
             </div>

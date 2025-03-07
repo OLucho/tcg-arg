@@ -3,7 +3,7 @@ import { ONE_YEAR_ON_SECONDS } from "~/common"
 import SetDetailClient from "./set-detail-client"
 
 async function getSetCards(setId: string) {
-    const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}`, {
+    const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=set.id:${setId}&orderBy=number`, {
         next: { revalidate: ONE_YEAR_ON_SECONDS }
     })
     const data = await res.json() as { data: PokemonCard[] }
