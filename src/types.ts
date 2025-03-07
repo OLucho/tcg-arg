@@ -31,6 +31,19 @@ export interface CardPrice {
     directLow?: number
 }
 
+export interface Attack {
+    name: string
+    cost: string[]
+    convertedEnergyCost: number
+    damage: string
+    text: string
+}
+
+export interface Weakness {
+    type: string
+    value: string
+}
+
 export interface PokemonCard {
     id: string
     name: string
@@ -40,7 +53,13 @@ export interface PokemonCard {
         large: string
     }
     rarity: string
+    flavorText?: string
     types?: string[]
+    hp?: string
+    attacks?: Attack[]
+    weaknesses?: Weakness[]
+    retreatCost?: string[]
+    artist?: string
     supertype: string
     subtypes?: string[]
     set: {

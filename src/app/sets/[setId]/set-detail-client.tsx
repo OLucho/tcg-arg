@@ -1,12 +1,15 @@
 "use client"
 
-import { useState, useMemo } from "react"
 import { Grid, List, Search, X } from "lucide-react"
-import type { PokemonSet, CardVariants, PokemonCard } from "~/types"
-import Tabs from "./components/tabs"
+import type { PokemonSet, PokemonCard } from "~/types"
 import CardGrid from "./components/card-grid"
-import CardVariantsButtons from "./components/card-variants-button"
-
+import SetTabs from "./components/set-tabs"
+import CardModal from "./components/card-modal"
+import SetHeader from "./components/set-header"
+import VariantFilters from "./components/variant-filters"
+import SortFilters from "./components/sort-filters"
+import { useSetDetail } from "./hooks/useSetDetail"
+import CardVariantsButtons from "./components/card-variants-buttons"
 
 interface SetDetailClientProps {
     setDetails: PokemonSet
@@ -14,106 +17,41 @@ interface SetDetailClientProps {
 }
 
 export default function SetDetailClient({ setDetails, cards }: SetDetailClientProps) {
-    const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-    const [searchTerm, setSearchTerm] = useState("")
-    const [activeTab, setActiveTab] = useState("show-all")
-    const [cardVariants, setCardVariants] = useState<Record<string, CardVariants>>({})
-
-    // Filtrar cartas según el término de búsqueda
-    const filteredBySearch = useMemo(() => {
-        if (!searchTerm.trim()) return cards
-
-        const lowercaseSearch = searchTerm.toLowerCase()
-        return cards.filter(
-            (card) => card.name.toLowerCase().includes(lowercaseSearch) || card.number.includes(lowercaseSearch),
-        )
-    }, [searchTerm, cards])
-
-    // Filtrar cartas según la tab activa
-    const displayedCards = useMemo(() => {
-        switch (activeTab) {
-            case "have":
-                return filteredBySearch.filter((card) => {
-                    const variants = cardVariants[card.id]
-                    return variants && (variants.normal || variants.holofoil || variants.reverseHolofoil)
-                })
-            case "need":
-                return filteredBySearch.filter((card) => {
-                    const variants = cardVariants[card.id]
-                    return !variants || (!variants.normal && !variants.holofoil && !variants.reverseHolofoil)
-                })
-            case "dupes":
-                // Implementar lógica para duplicados si es necesario
-                return []
-            default:
-                return filteredBySearch
-        }
-    }, [activeTab, filteredBySearch, cardVariants])
-
-    // Calcular contadores para las tabs
-    const counters = useMemo(() => {
-        const have = cards.filter((card) => {
-            const variants = cardVariants[card.id]
-            return variants && (variants.normal || variants.holofoil || variants.reverseHolofoil)
-        }).length
-
-        return {
-            have,
-            need: cards.length - have,
-            dupes: 0, // Implementar lógica para duplicados si es necesario
-        }
-    }, [cards, cardVariants])
-
-    // Limpiar la búsqueda
-    const clearSearch = () => {
-        setSearchTerm("")
-    }
-
-    // Función para alternar las variantes de una carta
-    const toggleVariant = (cardId: string, variant: keyof CardVariants) => {
-        setCardVariants((prev) => ({
-            ...prev,
-            [cardId]: {
-                ...(prev[cardId] ?? { normal: false, holofoil: false, reverseHolofoil: false }),
-                [variant]: !prev[cardId]?.[variant],
-            },
-        }))
-    }
+    const {
+        // Estados
+        viewMode,
+        searchTerm,
+        activeTab,
+        cardVariants,
+        selectedCard,
+        selectedVariantFilters,
+        currentSort,
+        sortDirection,
+        quantities,
+        // Datos calculados
+        displayedCards,
+        counters,
+        // Acciones
+        setViewMode,
+        setSearchTerm,
+        setActiveTab,
+        handleVariantToggle,
+        clearSearch,
+        handleSortChange,
+        handleDirectionChange,
+        toggleVariant,
+        handleCardClick,
+        handleCloseModal,
+        updateQuantities,
+    } = useSetDetail(setDetails, cards)
 
     return (
         <div className="bg-base-300 min-h-screen pb-16">
-            {/* Hero section usando el componente hero de daisyUI */}
-            <div
-                className="hero min-h-[20rem]"
-                style={{
-                    backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), url(${setDetails.images.logo})`,
-                }}
-            >
-                <div className="hero-overlay bg-opacity-60 bg-gradient-to-b from-transparent to-base-300"></div>
-                <div className="hero-content text-center text-neutral-content">
-                    <div className="max-w-md">
-                        {setDetails.images.symbol && (
-                            <img
-                                src={setDetails.images.symbol || "/placeholder.svg"}
-                                alt={`${setDetails.name} Symbol`}
-                                className="w-16 h-16 mx-auto mb-4"
-                            />
-                        )}
-                        <h1 className="text-5xl font-bold">{setDetails.name}</h1>
-                        <p className="py-2">{setDetails.series} Series</p>
-
-                        <div className="flex flex-wrap justify-center gap-4 mt-4">
-                            <div className="badge badge-lg badge-outline">
-                                Released: {new Date(setDetails.releaseDate).toLocaleDateString()}
-                            </div>
-                            <div className="badge badge-lg badge-primary">{setDetails.printedTotal} Cards</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            {/* Header con información del set */}
+            <SetHeader setDetails={setDetails} cards={cards} cardVariants={cardVariants} />
 
             {/* Contenido principal */}
-            <div className="container mx-auto px-4 pt-6 relative z-10">
+            <div className="container mx-auto px-4 pt-6">
                 {/* Sección de cartas */}
                 <div className="card bg-base-200 shadow-xl">
                     <div className="card-body">
@@ -147,6 +85,14 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                     )}
                                 </div>
 
+                                {/* Filtros de ordenamiento */}
+                                <SortFilters
+                                    currentSort={currentSort}
+                                    sortDirection={sortDirection}
+                                    onSortChange={handleSortChange}
+                                    onDirectionChange={handleDirectionChange}
+                                />
+
                                 {/* Botones de vista */}
                                 <div className="btn-group self-end">
                                     <button
@@ -165,25 +111,12 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                             </div>
                         </div>
 
-                        {/* Leyenda de variantes */}
-                        <div className="flex flex-wrap gap-4 mt-4 text-sm">
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-yellow-400 rounded"></div>
-                                <span>=Normal</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                                <span>=Holofoil</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-4 h-4 bg-blue-400 rounded"></div>
-                                <span>=Reverse Holofoil</span>
-                            </div>
-                        </div>
+                        {/* Filtros de variante */}
+                        <VariantFilters selectedVariants={selectedVariantFilters} onVariantToggle={handleVariantToggle} />
 
                         {/* Tabs de navegación */}
                         <div className="mt-6">
-                            <Tabs
+                            <SetTabs
                                 activeTab={activeTab}
                                 haveCount={counters.have}
                                 needCount={counters.need}
@@ -194,7 +127,7 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
 
                         <div className="divider"></div>
 
-                        {/* Mensaje cuando no hay resultados de búsqueda */}
+                        {/* Mensaje cuando no hay resultados */}
                         {displayedCards.length === 0 && (
                             <div className="alert alert-info">
                                 <div>
@@ -220,6 +153,7 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                     setDetails={setDetails}
                                     cardVariants={cardVariants}
                                     onToggleVariant={toggleVariant}
+                                    onCardClick={handleCardClick}
                                 />
                             ) : (
                                 <div className="overflow-x-auto">
@@ -236,7 +170,7 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                         </thead>
                                         <tbody>
                                             {displayedCards.map((card) => (
-                                                <tr key={card.id} className="hover">
+                                                <tr key={card.id} className="hover cursor-pointer" onClick={() => handleCardClick(card)}>
                                                     <td>{card.number}</td>
                                                     <td>
                                                         <div className="relative w-16 h-24">
@@ -248,28 +182,25 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                                         </div>
                                                     </td>
                                                     <td>{card.name}</td>
-                                                    <td>{card.types?.join(", ") ?? "-"}</td>
+                                                    <td>{card.types?.join(", ") || "-"}</td>
                                                     <td>
                                                         <span className="badge">{card.rarity}</span>
                                                     </td>
-                                                    <td>
+                                                    <td onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex gap-2">
-                                                            {/* Usar el componente CardVariantsButtons con tamaño grande */}
-                                                            <CardVariantsButtons
-                                                                cardId={card.id}
-                                                                availableVariants={
-                                                                    card.tcgplayer?.prices
-                                                                        ? (Object.keys(card.tcgplayer.prices).filter((key) =>
-                                                                            ["normal", "holofoil", "reverseHolofoil"].includes(key),
-                                                                        ) as ("normal" | "holofoil" | "reverseHolofoil")[])
-                                                                        : ["normal"]
-                                                                }
-                                                                selectedVariants={
-                                                                    cardVariants[card.id] ?? { normal: false, holofoil: false, reverseHolofoil: false }
-                                                                }
-                                                                onToggleVariant={toggleVariant}
-                                                                size="lg"
-                                                            />
+                                                            {card.tcgplayer?.prices && (
+                                                                <CardVariantsButtons // Using the imported component
+                                                                    cardId={card.id}
+                                                                    availableVariants={Object.keys(card.tcgplayer.prices)
+                                                                        .filter((key) => ["normal", "holofoil", "reverseHolofoil"].includes(key))
+                                                                        .map((key) => key as "normal" | "holofoil" | "reverseHolofoil")}
+                                                                    selectedVariants={
+                                                                        cardVariants[card.id] || { normal: false, holofoil: false, reverseHolofoil: false }
+                                                                    }
+                                                                    onToggleVariant={toggleVariant}
+                                                                    size="lg"
+                                                                />
+                                                            )}
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -281,6 +212,19 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                     </div>
                 </div>
             </div>
+
+            {/* Modal de detalles de la carta */}
+            {selectedCard && (
+                <CardModal
+                    card={selectedCard}
+                    isOpen={!!selectedCard}
+                    onClose={handleCloseModal}
+                    cardVariants={cardVariants}
+                    onToggleVariant={toggleVariant}
+                    quantities={quantities}
+                    setQuantities={updateQuantities}
+                />
+            )}
         </div>
     )
 }

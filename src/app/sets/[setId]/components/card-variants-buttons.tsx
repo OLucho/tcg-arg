@@ -1,5 +1,8 @@
 "use client"
 
+import type React from "react"
+
+import { memo } from "react"
 import type { CardVariants } from "~/types"
 
 interface CardVariantsButtonsProps {
@@ -10,7 +13,7 @@ interface CardVariantsButtonsProps {
     size?: "sm" | "md" | "lg"
 }
 
-export default function CardVariantsButtons({
+const CardVariantsButtons = memo(function CardVariantsButtons({
     cardId,
     availableVariants,
     selectedVariants,
@@ -23,15 +26,31 @@ export default function CardVariantsButtons({
         lg: "w-7 h-7",
     }[size]
 
+    // Crear funciones de manejo de clics específicas para cada variante
+    const handleNormalClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onToggleVariant(cardId, "normal")
+    }
+
+    const handleHolofoilClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onToggleVariant(cardId, "holofoil")
+    }
+
+    const handleReverseHolofoilClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        onToggleVariant(cardId, "reverseHolofoil")
+    }
+
     return (
         <div className="flex gap-2">
             {availableVariants.includes("normal") && (
                 <button
                     className={`${buttonSize} rounded-full transition-all ${selectedVariants.normal
                             ? "bg-yellow-400 ring-2 ring-yellow-200 shadow-inner"
-                            : "bg-yellow-400/70 hover:bg-yellow-400/90 border border-yellow-500/50"
+                            : "bg-transparent border-2 border-yellow-400 hover:bg-yellow-400/20"
                         }`}
-                    onClick={() => onToggleVariant(cardId, "normal")}
+                    onClick={handleNormalClick}
                     title="Normal"
                 />
             )}
@@ -39,9 +58,9 @@ export default function CardVariantsButtons({
                 <button
                     className={`${buttonSize} rounded-full transition-all ${selectedVariants.holofoil
                             ? "bg-purple-500 ring-2 ring-purple-300 shadow-inner"
-                            : "bg-purple-500/70 hover:bg-purple-500/90 border border-purple-600/50"
+                            : "bg-transparent border-2 border-purple-500 hover:bg-purple-500/20"
                         }`}
-                    onClick={() => onToggleVariant(cardId, "holofoil")}
+                    onClick={handleHolofoilClick}
                     title="Holofoil"
                 />
             )}
@@ -49,13 +68,15 @@ export default function CardVariantsButtons({
                 <button
                     className={`${buttonSize} rounded-full transition-all ${selectedVariants.reverseHolofoil
                             ? "bg-blue-400 ring-2 ring-blue-200 shadow-inner"
-                            : "bg-blue-400/70 hover:bg-blue-400/90 border border-blue-500/50"
+                            : "bg-transparent border-2 border-blue-400 hover:bg-blue-400/20"
                         }`}
-                    onClick={() => onToggleVariant(cardId, "reverseHolofoil")}
+                    onClick={handleReverseHolofoilClick}
                     title="Reverse Holofoil"
                 />
             )}
         </div>
     )
-}
+})
+
+export default CardVariantsButtons
 
