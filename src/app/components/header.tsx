@@ -36,9 +36,9 @@ export function Header({ seriesGroups }: HeaderProps) {
             ></div>
 
             <div
-                className={`fixed top-0 left-0 w-64 h-full bg-base-200 z-50 shadow-lg transform transition-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
+                className={`fixed top-0 left-0 w-80 h-full bg-base-200 z-50 shadow-lg transform transition-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
             >
-                <Sidebar seriesGroups={seriesGroups} onClose={() => setIsOpen(false)} />
+                <Sidebar seriesGroups={seriesGroups} />
             </div>
         </div>
     )

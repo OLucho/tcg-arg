@@ -4,7 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { ONE_YEAR_ON_SECONDS } from "~/common";
 import { type PokemonSet } from "~/types";
-import { Header } from "./header";
+import { Header } from "./components/header";
 
 export const metadata: Metadata = {
   title: "TCG Argentina",
