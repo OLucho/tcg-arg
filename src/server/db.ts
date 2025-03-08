@@ -1,17 +1,19 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client'
 
-import { env } from "~/env";
+const databaseUrl = process.env.NODE_ENV === 'production'
+  ? process.env.DATABASE_URL
+  : 'file:./dev.db';
 
-const createPrismaClient = () =>
-  new PrismaClient({
-    log:
-      env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: databaseUrl
+    }
+  }
+});
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: ReturnType<typeof createPrismaClient> | undefined;
-};
-
-export const db = globalForPrisma.prisma ?? createPrismaClient();
-
-if (env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+prisma.$connect().then(() => {
+  console.log(`Conectado a la base de datos en ${process.env.NODE_ENV}`);
+}).catch((error) => {
+  console.error('Error al conectar a la base de datos:', error);
+});
