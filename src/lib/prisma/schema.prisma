@@ -10,21 +10,21 @@ datasource db {
 model User {
     id            String    @id
     name          String
-    email         String
+    email         String    @unique
     emailVerified Boolean
     createdAt     DateTime
     updatedAt     DateTime
     sessions      Session[]
     accounts      Account[]
+    lists         List[] // Relación con las listas
 
-    @@unique([email])
     @@map("user")
 }
 
 model Session {
     id        String   @id
     expiresAt DateTime
-    token     String
+    token     String   @unique
     createdAt DateTime
     updatedAt DateTime
     ipAddress String?
@@ -32,7 +32,6 @@ model Session {
     userId    String
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([token])
     @@map("session")
 }
 
@@ -64,4 +63,29 @@ model Verification {
     updatedAt  DateTime?
 
     @@map("verification")
+}
+
+model List {
+    id          String       @id
+    name        String
+    description String?
+    isPublic    Boolean      @default(false)
+    createdAt   DateTime     @default(now())
+    updatedAt   DateTime     @updatedAt
+    userId      String
+    user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    cards       CardOnList[]
+
+    @@map("list")
+}
+
+model CardOnList {
+    id      String   @id
+    listId  String
+    list    List     @relation(fields: [listId], references: [id], onDelete: Cascade)
+    cardId  String // ID de la carta que viene de la API
+    addedAt DateTime @default(now())
+
+    @@unique([listId, cardId]) // Evita duplicados en la misma lista
+    @@map("card_on_list")
 }
