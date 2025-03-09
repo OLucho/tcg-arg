@@ -1,27 +1,20 @@
 "use client"
-
 import { useState } from "react"
-import { Menu } from "lucide-react"
+import { Menu, LogOut } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { redirect } from "next/navigation"
 import type { PokemonSet } from "~/types"
 import { Sidebar } from "./sidebar"
+import { signOut } from "~/lib/auth-client"
+import { useSession } from "../(auth)/(hooks)/useSession"
 
 interface HeaderProps {
     seriesGroups: Record<string, PokemonSet[]>
 }
 
-export function Header({ seriesGroups }: HeaderProps) {
+export function Header({ seriesGroups = {} }: HeaderProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const router = useRouter()
-
-    const handleLogin = () => {
-        router.push("/login")
-    }
-
-    const handleRegister = () => {
-        router.push("sign-up")
-    }
+    const { isLoggedIn, isFetching, refetchSession } = useSession()
 
     return (
         <div className="relative">
@@ -37,14 +30,30 @@ export function Header({ seriesGroups }: HeaderProps) {
                         TCG-Arg
                     </Link>
                 </div>
-                <div className="flex flex-none gap-4">
-                    <Link href="login" className="btn btn-outline btn-primary">
-                        Iniciar sesión
-                    </Link>
-                    <Link href="/sign-up" className="btn btn-primary">
-                        Registrarse
-                    </Link>
-                </div>
+                {!isFetching && <div className="flex flex-none gap-4">
+                    {isLoggedIn ? (
+                        <button type="submit" className="btn btn-secondary" onClick={() => signOut({
+                            fetchOptions: {
+                                onSuccess: async () => {
+                                    await refetchSession()
+                                    redirect("/sign-in")
+                                }
+                            }
+                        })}>
+                            <LogOut size={16} className="mr-2" />
+                            Cerrar sesión
+                        </button>
+                    ) : (
+                        <>
+                            <button onClick={() => redirect("/sign-in")} className="btn btn-outline btn-primary">
+                                Iniciar sesión
+                            </button>
+                            <button onClick={() => redirect("sign-up")} className="btn btn-primary">
+                                Registrarse
+                            </button>
+                        </>
+                    )}
+                </div>}
             </header>
 
             {/* Sidebar con Overlay */}
@@ -56,7 +65,7 @@ export function Header({ seriesGroups }: HeaderProps) {
             <div
                 className={`fixed top-0 left-0 w-80 h-full bg-base-200 z-50 shadow-lg transform transition-transform ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
             >
-                <Sidebar seriesGroups={seriesGroups} onClose={() => setIsOpen(false)} />
+                <Sidebar seriesGroups={seriesGroups} />
             </div>
         </div>
     )

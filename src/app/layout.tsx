@@ -5,8 +5,7 @@ import { type Metadata } from "next";
 import { ONE_YEAR_ON_SECONDS } from "~/common";
 import { type PokemonSet } from "~/types";
 import { Header } from "./components/header";
-import { auth } from "~/lib/auth";
-import { headers } from "next/headers";
+import { ReactQueryProvider } from "./components/react-query-provider";
 
 export const metadata: Metadata = {
   title: "TCG Argentina",
@@ -34,14 +33,15 @@ async function getPokemonSetsGroupedBySeries() {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const seriesGroups = await getPokemonSetsGroupedBySeries()
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
+
   return (
     <html lang="en" className={`${GeistSans.variable}`} data-theme="abyss">
       <body>
-        <Header seriesGroups={seriesGroups} />
-        {children}</body>
+        <ReactQueryProvider>
+          <Header seriesGroups={seriesGroups} />
+          {children}
+        </ReactQueryProvider>
+      </body>
     </html>
   )
 }

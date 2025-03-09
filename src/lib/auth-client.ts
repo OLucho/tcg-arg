@@ -1,11 +1,10 @@
 import { createAuthClient } from "better-auth/react";
 
-const isDev = process.env.ENV === "development";
-
+const isDev = process.env.NEXT_PUBLIC_ENV === "development";
 const authClient = createAuthClient({
-    baseURL: "http://localhost:3000"
+    baseURL: isDev ? "http://localhost:3000" : "https://api.tcg-arg.com",
 })
 
 export const {
-    signIn, signOut, signUp
+    signIn, signOut, signUp, getSession
 } = authClient;
