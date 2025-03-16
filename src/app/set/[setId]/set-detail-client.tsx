@@ -2,18 +2,24 @@
 
 import { Grid, List, Search, X } from "lucide-react"
 import type { PokemonSet, PokemonCard } from "~/types"
-import CardGrid from "./components/card-grid"
+import CardGrid from "~/app/components/cards/card-grid"
+import CardModal from "~/app/components/cards/card-modal" // Actualizada la importación
 import SetTabs from "./components/set-tabs"
-import CardModal from "./components/card-modal"
 import SetHeader from "./components/set-header"
 import VariantFilters from "./components/variant-filters"
 import SortFilters from "./components/sort-filters"
 import { useSetDetail } from "./hooks/useSetDetail"
-import CardVariantsButtons from "./components/card-variants-buttons"
+import Image from "next/image"
 
 interface SetDetailClientProps {
     setDetails: PokemonSet
     cards: PokemonCard[]
+}
+
+type CardVariants = {
+    normal?: boolean
+    holofoil?: boolean
+    reverseHolofoil?: boolean
 }
 
 export default function SetDetailClient({ setDetails, cards }: SetDetailClientProps) {
@@ -111,11 +117,9 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                             </div>
                         </div>
 
-                        {/* Filtros de variante */}
-                        <VariantFilters selectedVariants={selectedVariantFilters} onVariantToggle={handleVariantToggle} />
-
-                        {/* Tabs de navegación */}
-                        <div className="mt-6">
+                        {/* Reemplazar la sección actual de filtros y tabs con: */}
+                        <div className="flex justify-between items-center gap-4 mb-4">
+                            {/* Tabs a la izquierda */}
                             <SetTabs
                                 activeTab={activeTab}
                                 haveCount={counters.have}
@@ -123,7 +127,12 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                 dupesCount={counters.dupes}
                                 onTabChange={setActiveTab}
                             />
+
+                            {/* Filtros de variante a la derecha */}
+                            <VariantFilters selectedVariants={selectedVariantFilters} onVariantToggle={handleVariantToggle} />
                         </div>
+
+                        {/* Eliminar el div.divider que estaba después de los tabs */}
 
                         <div className="divider"></div>
 
@@ -154,6 +163,7 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                     cardVariants={cardVariants}
                                     onToggleVariant={toggleVariant}
                                     onCardClick={handleCardClick}
+                                    showVariantButtons={true}
                                 />
                             ) : (
                                 <div className="overflow-x-auto">
@@ -174,32 +184,51 @@ export default function SetDetailClient({ setDetails, cards }: SetDetailClientPr
                                                     <td>{card.number}</td>
                                                     <td>
                                                         <div className="relative w-16 h-24">
-                                                            <img
+                                                            <Image
                                                                 src={card.images.small || "/placeholder.svg"}
                                                                 alt={card.name}
-                                                                className="w-full h-full object-contain rounded"
+                                                                fill
+                                                                sizes="48px"
+                                                                className="object-contain rounded"
                                                             />
                                                         </div>
                                                     </td>
                                                     <td>{card.name}</td>
-                                                    <td>{card.types?.join(", ") || "-"}</td>
+                                                    <td>{card.types?.join(", ") ?? "-"}</td>
                                                     <td>
                                                         <span className="badge">{card.rarity}</span>
                                                     </td>
                                                     <td onClick={(e) => e.stopPropagation()}>
                                                         <div className="flex gap-2">
                                                             {card.tcgplayer?.prices && (
-                                                                <CardVariantsButtons // Using the imported component
-                                                                    cardId={card.id}
-                                                                    availableVariants={Object.keys(card.tcgplayer.prices)
+                                                                <div className="flex gap-2">
+                                                                    {Object.keys(card.tcgplayer.prices)
                                                                         .filter((key) => ["normal", "holofoil", "reverseHolofoil"].includes(key))
-                                                                        .map((key) => key as "normal" | "holofoil" | "reverseHolofoil")}
-                                                                    selectedVariants={
-                                                                        cardVariants[card.id] || { normal: false, holofoil: false, reverseHolofoil: false }
-                                                                    }
-                                                                    onToggleVariant={toggleVariant}
-                                                                    size="lg"
-                                                                />
+                                                                        .map((key) => {
+                                                                            const variant = key as keyof CardVariants
+                                                                            const isSelected = cardVariants[card.id]?.[variant] ?? false
+
+                                                                            let bgColor = ""
+                                                                            if (variant === "normal")
+                                                                                bgColor = isSelected ? "bg-yellow-400" : "border-yellow-400"
+                                                                            if (variant === "holofoil")
+                                                                                bgColor = isSelected ? "bg-purple-500" : "border-purple-500"
+                                                                            if (variant === "reverseHolofoil")
+                                                                                bgColor = isSelected ? "bg-blue-400" : "border-blue-400"
+
+                                                                            return (
+                                                                                <button
+                                                                                    key={variant}
+                                                                                    className={`w-7 h-7 rounded-lg transition-all ${isSelected
+                                                                                        ? `${bgColor} ring-2 shadow-inner`
+                                                                                        : `bg-transparent border-2 ${bgColor}`
+                                                                                        }`}
+                                                                                    onClick={() => toggleVariant(card.id, variant)}
+                                                                                    title={variant}
+                                                                                />
+                                                                            )
+                                                                        })}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </td>

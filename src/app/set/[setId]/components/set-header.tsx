@@ -11,10 +11,12 @@ interface SetHeaderProps {
 }
 
 export default function SetHeader({ setDetails, cards, cardVariants }: SetHeaderProps) {
-    // Calcular el progreso total incluyendo variantes
-    const { totalPossible, totalCollected, progressPercentage } = useMemo(() => {
+    // Calcular el progreso total incluyendo variantes y el progreso de cartas únicas
+    const { totalPossible, totalCollected, progressPercentage, uniqueProgress } = useMemo(() => {
         let possible = 0
         let collected = 0
+        const uniqueCardsTotal = cards.length
+        let uniqueCardsCollected = 0
 
         // Contar todas las variantes posibles y coleccionadas
         cards.forEach((card) => {
@@ -29,23 +31,29 @@ export default function SetHeader({ setDetails, cards, cardVariants }: SetHeader
             // Contar variantes coleccionadas
             const variants = cardVariants[card.id]
             if (variants) {
-                if (variants.normal) collected++
-                if (variants.holofoil) collected++
-                if (variants.reverseHolofoil) collected++
+                let cardVariantsCollected = 0
+                if (variants.normal) cardVariantsCollected++
+                if (variants.holofoil) cardVariantsCollected++
+                if (variants.reverseHolofoil) cardVariantsCollected++
+                collected += cardVariantsCollected
+
+                // Si tiene al menos una variante, contar como carta única coleccionada
+                if (cardVariantsCollected > 0) {
+                    uniqueCardsCollected++
+                }
             }
         })
 
-        const percentage = (collected / possible) * 100
+        const masterSetPercentage = (collected / possible) * 100
+        const uniquePercentage = (uniqueCardsCollected / uniqueCardsTotal) * 100
 
         return {
             totalPossible: possible,
             totalCollected: collected,
-            progressPercentage: Math.round(percentage * 100) / 100,
+            progressPercentage: Math.round(masterSetPercentage * 100) / 100,
+            uniqueProgress: Math.round(uniquePercentage * 100) / 100,
         }
     }, [cards, cardVariants])
-
-    // Calcular el nivel basado en el porcentaje
-    const level = Math.floor(progressPercentage / 10)
 
     return (
         <div className="bg-base-200">
@@ -82,21 +90,34 @@ export default function SetHeader({ setDetails, cards, cardVariants }: SetHeader
                         )}
 
                         {/* Barra de progreso */}
-                        <div className="w-full max-w-md">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-sm text-gray-400">
-                                    {totalCollected}/{totalPossible} Collected
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm text-gray-400">LVL {level}</span>
-                                    <span className="text-sm text-gray-400">{progressPercentage}%</span>
+                        <div className="w-full max-w-md space-y-2">
+                            {/* Barra principal - Progreso de cartas únicas */}
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-sm text-gray-400">Set Progress ({uniqueProgress}%)</span>
+                                    <span className="text-sm text-gray-400">
+                                        {Math.round((uniqueProgress * cards.length) / 100)}/{cards.length} Cards
+                                    </span>
+                                </div>
+                                <div className="w-full bg-base-300 rounded-full h-3">
+                                    <div className="bg-primary h-3 rounded-full transition-all" style={{ width: `${uniqueProgress}%` }} />
                                 </div>
                             </div>
-                            <div className="w-full bg-base-300 rounded-full h-2">
-                                <div
-                                    className="bg-primary h-2 rounded-full transition-all"
-                                    style={{ width: `${progressPercentage}%` }}
-                                />
+
+                            {/* Barra secundaria - Progreso del master set */}
+                            <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <span className="text-sm text-gray-400">Master Set ({progressPercentage}%)</span>
+                                    <span className="text-sm text-gray-400">
+                                        {totalCollected}/{totalPossible} Variants
+                                    </span>
+                                </div>
+                                <div className="w-full bg-base-300 rounded-full h-2">
+                                    <div
+                                        className="bg-yellow-400 h-2 rounded-full transition-all"
+                                        style={{ width: `${progressPercentage}%` }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

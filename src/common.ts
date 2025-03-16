@@ -1,1 +1,0 @@
-export const ONE_YEAR_ON_SECONDS = 31536000;

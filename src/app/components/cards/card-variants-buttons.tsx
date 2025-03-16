@@ -1,7 +1,7 @@
+// Moved from set/[setId]/components/card-variants-buttons.tsx
 "use client"
 
 import type React from "react"
-
 import { memo } from "react"
 import type { CardVariants } from "~/types"
 
@@ -46,7 +46,7 @@ const CardVariantsButtons = memo(function CardVariantsButtons({
         <div className="flex gap-2">
             {availableVariants.includes("normal") && (
                 <button
-                    className={`${buttonSize} rounded-full transition-all ${selectedVariants.normal
+                    className={`${buttonSize} rounded-lg transition-all ${selectedVariants.normal
                             ? "bg-yellow-400 ring-2 ring-yellow-200 shadow-inner"
                             : "bg-transparent border-2 border-yellow-400 hover:bg-yellow-400/20"
                         }`}
@@ -56,7 +56,7 @@ const CardVariantsButtons = memo(function CardVariantsButtons({
             )}
             {availableVariants.includes("holofoil") && (
                 <button
-                    className={`${buttonSize} rounded-full transition-all ${selectedVariants.holofoil
+                    className={`${buttonSize} rounded-lg transition-all ${selectedVariants.holofoil
                             ? "bg-purple-500 ring-2 ring-purple-300 shadow-inner"
                             : "bg-transparent border-2 border-purple-500 hover:bg-purple-500/20"
                         }`}
@@ -66,7 +66,7 @@ const CardVariantsButtons = memo(function CardVariantsButtons({
             )}
             {availableVariants.includes("reverseHolofoil") && (
                 <button
-                    className={`${buttonSize} rounded-full transition-all ${selectedVariants.reverseHolofoil
+                    className={`${buttonSize} rounded-lg transition-all ${selectedVariants.reverseHolofoil
                             ? "bg-blue-400 ring-2 ring-blue-200 shadow-inner"
                             : "bg-transparent border-2 border-blue-400 hover:bg-blue-400/20"
                         }`}

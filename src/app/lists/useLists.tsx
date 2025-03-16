@@ -70,7 +70,7 @@ export function useLists(initialLists: ApiList[]) {
             setLists((currentLists) => {
                 // Find the list name before deleting it
                 const listToDelete = currentLists.find((list) => list.id === listId)
-                const listName = listToDelete?.name || "Lista"
+                const listName = listToDelete?.name ?? "Lista"
 
                 const updatedLists = currentLists.filter((list) => list.id !== listId)
 

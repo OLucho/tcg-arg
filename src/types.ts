@@ -79,3 +79,11 @@ export interface PokemonCard {
     }
 }
 
+export interface VariantQuantity {
+    normal: number
+    holofoil: number
+    reverseHolofoil: number
+    pokeballPattern: number
+    masterBallPattern: number
+}
+

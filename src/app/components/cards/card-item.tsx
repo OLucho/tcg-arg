@@ -1,3 +1,4 @@
+// Actualizar el componente CardItem para soportar la opción de ocultar botones de variantes
 "use client"
 
 import { memo } from "react"
@@ -7,12 +8,13 @@ import type { CardVariants, PokemonCard } from "~/types"
 
 interface CardItemProps {
     card: PokemonCard
-    setDetails: {
+    setDetails?: {
         printedTotal: number
     }
     cardVariants: Record<string, CardVariants>
     onToggleVariant: (cardId: string, variant: keyof CardVariants) => void
     onCardClick: (card: PokemonCard) => void
+    showVariantButtons?: boolean // Nueva prop para controlar la visibilidad de los botones de variantes
 }
 
 const CardItem = memo(function CardItem({
@@ -21,6 +23,7 @@ const CardItem = memo(function CardItem({
     cardVariants,
     onToggleVariant,
     onCardClick,
+    showVariantButtons = true, // Por defecto, mostrar los botones
 }: CardItemProps) {
     // Función para obtener las variantes disponibles para una carta
     const getAvailableVariants = (card: PokemonCard): (keyof CardVariants)[] => {
@@ -37,6 +40,17 @@ const CardItem = memo(function CardItem({
         return variants.length > 0 ? variants : ["normal"]
     }
 
+    // Obtener las variantes disponibles para esta carta
+    const availableVariants = getAvailableVariants(card)
+
+    // Verificar si el usuario tiene TODAS las variantes disponibles
+    const hasAllVariants =
+        availableVariants.length > 0 &&
+        availableVariants.every((variant) => {
+            const hasVariant = cardVariants[card.id]?.[variant] === true
+            return hasVariant
+        })
+
     // Función para obtener el precio base de la carta (el más bajo disponible)
     const getBasePrice = (card: PokemonCard): number | null => {
         if (!card.tcgplayer?.prices) return null
@@ -52,7 +66,6 @@ const CardItem = memo(function CardItem({
         return null
     }
 
-    const availableVariants = getAvailableVariants(card)
     const basePrice = getBasePrice(card)
 
     return (
@@ -61,7 +74,7 @@ const CardItem = memo(function CardItem({
             onClick={() => onCardClick(card)}
         >
             <figure className="px-4 pt-4 pb-0">
-                <div className="relative w-full aspect-[2/3]">
+                <div className="relative w-full aspect-[2/3] group">
                     <Image
                         src={card.images.small || "/placeholder.svg"}
                         alt={card.name}
@@ -72,10 +85,32 @@ const CardItem = memo(function CardItem({
                         priority={false}
                     />
 
+                    {/* Checkmark overlay for selected cards */}
+                    {hasAllVariants && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-primary rounded-full p-2 shadow-lg">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="text-white"
+                                >
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Botones de variantes superpuestos */}
-                    {availableVariants.length > 0 && (
+                    {showVariantButtons && availableVariants.length > 0 && (
                         <div
-                            className="absolute bottom-2 left-1/2 transform -translate-x-1/2 flex gap-2 bg-base-300/80 backdrop-blur-sm p-1.5 rounded-full shadow-md border border-base-100/30"
+                            className="absolute bottom-2 right-2 flex gap-2 bg-base-200/90 backdrop-blur-sm p-1.5 rounded-lg shadow-md border border-base-100/30 opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => e.stopPropagation()} // Prevenir que el clic en los botones abra el modal
                         >
                             <CardVariantsButtons
@@ -93,7 +128,8 @@ const CardItem = memo(function CardItem({
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-sm opacity-80">
-                            {card.number}/{setDetails.printedTotal}
+                            {card.number}
+                            {setDetails ? `/${setDetails.printedTotal}` : ""}
                         </span>
                         <span className="badge badge-sm">{card.rarity}</span>
                     </div>
